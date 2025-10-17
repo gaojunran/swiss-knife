@@ -1,0 +1,19 @@
+[tools]
+bun = 'latest'
+
+[env]
+'_'.path = ['bin'] # should suffixed with .ts
+
+[tasks.install]
+description = 'Install locally. Now that bun as a package manager supports poorly, so needs a script.'
+run = '''
+#!/usr/bin/env bun
+
+import { $ } from "bun";
+const cwd = process.cwd();
+const home = process.env.HOME || process.env.USERPROFILE;
+if !fs.existsSync(`${home}/.bun/`) {
+await $`bun add -g file://${cwd}`;
+}
+'''
+
