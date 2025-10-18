@@ -2,18 +2,36 @@
 bun = 'latest'
 
 [env]
-'_'.path = ['bin'] # should suffixed with .ts
+'_'.path = ['bin']  
 
 [tasks.install]
-description = 'Install locally. Now that bun as a package manager supports poorly, so needs a script.'
+description = "Install dependencies"
+run = "bun install"
+
+[tasks.build]
+depends = "install"
+description = "Build the project"
 run = '''
 #!/usr/bin/env bun
 
-import { $ } from "bun";
-const cwd = process.cwd();
-const home = process.env.HOME || process.env.USERPROFILE;
-if !fs.existsSync(`${home}/.bun/`) {
-await $`bun add -g file://${cwd}`;
-}
-'''
+import { Glob, $ } from "bun";
 
+const cwd = process.cwd();
+
+const srcFiles = new Glob("src/*.{ts,js}").scanSync();
+for (const file of srcFiles) {
+  const outfile = file.replace("src/", "bin/").replace(/\.(ts|js)$/, "");
+  await $`bun build ${file} --outfile ${outfile}`;
+}
+
+const srcDirs = new Glob("src/*/").scanSync();
+for (const dir of srcDirs) {
+  const folderName = dir.replace("src/", "").replace(/\/$/, "");
+  const entryFile = `${dir}index.ts`;
+  const outfile = `bin/${folderName}`;
+  await $`bun build ${entryFile} --outfile ${outfile}`;
+}
+
+console.log(`\nPlease manually add ${cwd}/bin to your PATH.`);
+
+'''

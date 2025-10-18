@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { exec } from "child_process";
 import os from "os";
 
@@ -19,7 +21,7 @@ function findPidByProcessName(processName: string): Promise<number[]> {
       command = `pgrep -f "${processName}"`;
     }
 
-    exec(command, (error, stdout, stderr) => {
+    exec(command, (error, stdout) => {
       if (error) {
         // 如果 pgrep 找不到进程，会返回 code 1，不算错误
         if (platform !== "win32" && error.code === 1) {
@@ -34,9 +36,9 @@ function findPidByProcessName(processName: string): Promise<number[]> {
         const lines = stdout.trim().split("\n").slice(1); // 去掉标题行
         for (const line of lines) {
           const match = line.match(/"([^"]+)","([^"]+)","([^"]+)"/);
-          if (match && match[2]) {
+          if (match?.[2]) {
             const pid = parseInt(match[2], 10);
-            if (!isNaN(pid)) pids.push(pid);
+            if (!Number.isNaN(pid)) pids.push(pid);
           }
         }
       } else {
@@ -46,7 +48,7 @@ function findPidByProcessName(processName: string): Promise<number[]> {
           .split("\n")
           .forEach((line) => {
             const pid = parseInt(line, 10);
-            if (!isNaN(pid)) pids.push(pid);
+            if (!Number.isNaN(pid)) pids.push(pid);
           });
       }
 
@@ -68,30 +70,60 @@ function killProcess(pid: number): Promise<void> {
         ? `taskkill /PID ${pid} /F`
         : `kill -9 ${pid}`;
 
-    exec(command, (error, stdout, stderr) => {
+    exec(command, (error, _stdout, _stderr) => {
       if (error) return reject(error);
       resolve();
     });
   });
 }
 
-// 示例用法
-(async () => {
-  try {
-    const processName = "Wechat.exe"; // 替换成你的进程名
-    const pids = await findPidByProcessName(processName);
-
-    if (pids.length === 0) {
-      console.log(`未找到进程 "${processName}"`);
-      return;
-    }
-
-    console.log(`找到进程 "${processName}" 的 PID:`, pids);
-    for (const pid of pids) {
-      await killProcess(pid);
-      console.log(`已终止 PID ${pid}`);
-    }
-  } catch (error) {
-    console.error("出错:", error);
+// CLI: 支持多个参数，参数可以是进程名或 PID（数字）
+async function main() {
+  const args = process.argv.slice(2);
+  if (args.length === 0) {
+    console.error("用法: killer <processName|pid> [<processName|pid> ...]");
+    process.exitCode = 2;
+    return;
   }
-})();
+
+  for (const arg of args) {
+    try {
+      // 如果 arg 是纯数字，直接当作 PID 处理
+      if (/^\d+$/.test(arg)) {
+        const pid = Number(arg);
+        console.log(`终止指定 PID ${pid} ...`);
+        await killProcess(pid);
+        console.log(`已终止 PID ${pid}`);
+        continue;
+      }
+
+      // 否则按进程名查找（可能返回多个 PID）
+      const pids = await findPidByProcessName(arg);
+      if (pids.length === 0) {
+        console.warn(`未找到进程 "${arg}"`);
+        continue;
+      }
+
+      console.log(`找到进程 "${arg}" 的 PID:`, pids);
+      for (const pid of pids) {
+        try {
+          await killProcess(pid);
+          console.log(`已终止 PID ${pid}`);
+        } catch (e) {
+          console.error(`无法终止 PID ${pid}:`, e);
+        }
+      }
+    } catch (err) {
+      console.error(`处理 "${arg}" 时出错:`, err);
+    }
+  }
+}
+
+// 直接运行
+// use import.meta.main which works in ESM environments (bun/node when using ESM)
+if ((import.meta).main) {
+  main().catch((e) => {
+    console.error("出错:", e);
+    process.exit(1);
+  });
+}

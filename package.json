@@ -11,6 +11,7 @@
     "typescript": "^5"
   },
   "bin": {
-    "killer": "bin/killer.ts"
+    "killer": "bin/killer.ts",
+    "demo": "bin/demo.ts"
   }
 }

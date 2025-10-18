@@ -1,15 +1,11 @@
-# bun-run
+# swiss-knife
 
-To install dependencies:
+My handy script written in Bun/TypeScript which can be used as CLI.
 
-```bash
-bun install
+## Usage
+
+```sh
+# Clone the repo ...
+mise run build
+# Then add ./bin to PATH ...
 ```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.3.0. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
