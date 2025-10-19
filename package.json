@@ -13,5 +13,9 @@
   "bin": {
     "killer": "bin/killer.ts",
     "demo": "bin/demo.ts"
+  },
+  "dependencies": {
+    "clipboardy": "^5.0.0",
+    "open": "^10.2.0"
   }
 }
