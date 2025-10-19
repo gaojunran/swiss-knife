@@ -15,21 +15,39 @@ run = '''
 #!/usr/bin/env bun
 
 import { Glob, $ } from "bun";
+import { writeFileSync } from "fs";
 
 const cwd = process.cwd();
+const isWindows = process.platform === "win32";
 
 const srcFiles = new Glob("src/*.{ts,js}").scanSync();
 for (const file of srcFiles) {
-  const outfile = file.replace("src/", "bin/").replace(/\.(ts|js)$/, "");
-  await $`bun build ${file} --outfile ${outfile}`;
+  const outfile = isWindows 
+                    ? file.replace("src/", "bin/")
+                    : file.replace("src/", "bin/").replace(/\.(ts|js)$/, "");
+  await $`bun build --target bun ${file} --outfile ${outfile}`;
+  if (isWindows) {
+    const ps1File = outfile.replace(/\.js$/, ".ps1");
+    writeFileSync(ps1File, `bun run "${outfile}" @args`);
+  } else {
+    await $`chmod +x ${outfile}`;
+  }
 }
 
 const srcDirs = new Glob("src/*/").scanSync();
 for (const dir of srcDirs) {
   const folderName = dir.replace("src/", "").replace(/\/$/, "");
   const entryFile = `${dir}index.ts`;
-  const outfile = `bin/${folderName}`;
-  await $`bun build ${entryFile} --outfile ${outfile}`;
+  const outfile = isWindows
+                    ? `bin/${folderName}.js`
+                    : `bin/${folderName}`;
+  await $`bun build --target bun ${entryFile} --outfile ${outfile}`;
+  if (isWindows) {
+    const ps1File = outfile.replace(/\.js$/, ".ps1");
+    writeFileSync(ps1File, `bun run "${outfile}" @args`);
+  } else {
+    await $`chmod +x ${outfile}`;
+  }
 }
 
 console.log(`\nPlease manually add ${cwd}/bin to your PATH.`);
