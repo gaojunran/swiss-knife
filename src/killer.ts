@@ -1,7 +1,6 @@
-#!/usr/bin/env bun
-
-import { exec } from "child_process";
-import os from "os";
+import { Command } from "@cliffy/command";
+import { exec } from "node:child_process";
+import os from "node:os";
 
 /**
  * 查找进程名对应的 PID
@@ -66,9 +65,7 @@ function killProcess(pid: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const platform = os.platform();
     const command =
-      platform === "win32"
-        ? `taskkill /PID ${pid} /F`
-        : `kill -9 ${pid}`;
+      platform === "win32" ? `taskkill /PID ${pid} /F` : `kill -9 ${pid}`;
 
     exec(command, (error, _stdout, _stderr) => {
       if (error) return reject(error);
@@ -77,53 +74,51 @@ function killProcess(pid: number): Promise<void> {
   });
 }
 
-// CLI: 支持多个参数，参数可以是进程名或 PID（数字）
-async function main() {
-  const args = process.argv.slice(2);
-  if (args.length === 0) {
-    console.error("用法: killer <processName|pid> [<processName|pid> ...]");
-    process.exitCode = 2;
-    return;
-  }
+// 导出 Cliffy Command
+export const killerCommand = new Command()
+  .name("killer")
+  .description("Kill processes by name or PID")
+  .arguments("<targets...:string>")
+  .action(async (_options, ...targets: string[]) => {
+    if (targets.length === 0) {
+      console.error("用法: killer <processName|pid> [<processName|pid> ...]");
+      Deno.exit(2);
+    }
 
-  for (const arg of args) {
-    try {
-      // 如果 arg 是纯数字，直接当作 PID 处理
-      if (/^\d+$/.test(arg)) {
-        const pid = Number(arg);
-        console.log(`终止指定 PID ${pid} ...`);
-        await killProcess(pid);
-        console.log(`已终止 PID ${pid}`);
-        continue;
-      }
-
-      // 否则按进程名查找（可能返回多个 PID）
-      const pids = await findPidByProcessName(arg);
-      if (pids.length === 0) {
-        console.warn(`未找到进程 "${arg}"`);
-        continue;
-      }
-
-      console.log(`找到进程 "${arg}" 的 PID:`, pids);
-      for (const pid of pids) {
-        try {
+    for (const arg of targets) {
+      try {
+        // 如果 arg 是纯数字，直接当作 PID 处理
+        if (/^\d+$/.test(arg)) {
+          const pid = Number(arg);
+          console.log(`终止指定 PID ${pid} ...`);
           await killProcess(pid);
           console.log(`已终止 PID ${pid}`);
-        } catch (e) {
-          console.error(`无法终止 PID ${pid}:`, e);
+          continue;
         }
-      }
-    } catch (err) {
-      console.error(`处理 "${arg}" 时出错:`, err);
-    }
-  }
-}
 
-// 直接运行
-// use import.meta.main which works in ESM environments (bun/node when using ESM)
-if ((import.meta).main) {
-  main().catch((e) => {
-    console.error("出错:", e);
-    process.exit(1);
+        // 否则按进程名查找（可能返回多个 PID）
+        const pids = await findPidByProcessName(arg);
+        if (pids.length === 0) {
+          console.warn(`未找到进程 "${arg}"`);
+          continue;
+        }
+
+        console.log(`找到进程 "${arg}" 的 PID:`, pids);
+        for (const pid of pids) {
+          try {
+            await killProcess(pid);
+            console.log(`已终止 PID ${pid}`);
+          } catch (e) {
+            console.error(`无法终止 PID ${pid}:`, e);
+          }
+        }
+      } catch (err) {
+        console.error(`处理 "${arg}" 时出错:`, err);
+      }
+    }
   });
+
+// 直接运行支持
+if (import.meta.main) {
+  await killerCommand.parse(Deno.args);
 }
