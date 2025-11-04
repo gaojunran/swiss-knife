@@ -7,3 +7,7 @@ deno = 'latest'
 [tasks.install]
 description = "Install to global bin"
 run = "deno install -fgA index.ts --name x --config deno.json"
+
+[tasks.run]
+description = "Run with args when developing"
+run = "deno run -A index.ts {{arg(name='rest',var=true)}}"
