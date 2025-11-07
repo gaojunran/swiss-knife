@@ -1,11 +1,25 @@
 # swiss-knife
 
-My handy script written in Bun/TypeScript which can be used as CLI.
+My handy CLI script written in Deno/TypeScript.
 
 ## Usage
 
+### Install
+
 ```sh
-# Clone the repo ...
-mise run build
-# Then add ./bin to PATH ...
+# If you use mise...
+mise run install
+
+# If you prefer using deno directly...
+deno install -fgA index.ts --name x --config deno.json
+```
+
+### Development
+
+```sh
+# If you use mise...
+mise run dev
+
+# If you prefer using deno directly...
+deno run -A index.ts ARGS...
 ```
