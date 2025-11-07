@@ -2,6 +2,7 @@ import { Command } from "@cliffy/command";
 import { killerCommand } from "./src/killer.ts";
 import { todocxCommand } from "./src/todocx.ts";
 import { svgToDataCommand } from "./src/svgToData.ts";
+import { eachCommand } from "./src/each.ts";
 
 await new Command()
   .name("swiss-knife")
@@ -10,4 +11,5 @@ await new Command()
   .command("killer", killerCommand)
   .command("todocx", todocxCommand)
   .command("svg2data", svgToDataCommand)
+  .command("each", eachCommand)
   .parse(Deno.args);
