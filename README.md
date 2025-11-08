@@ -23,3 +23,7 @@ mise run dev
 # If you prefer using deno directly...
 deno run -A index.ts ARGS...
 ```
+
+### Note
+
+Most of my scripts are LLM-written. I cannot spare much time for these scripts. Modify them to suit your own needs!
