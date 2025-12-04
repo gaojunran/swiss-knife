@@ -64,8 +64,9 @@ function findPidByProcessName(processName: string): Promise<number[]> {
 function killProcess(pid: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const platform = os.platform();
-    const command =
-      platform === "win32" ? `taskkill /PID ${pid} /F` : `kill -9 ${pid}`;
+    const command = platform === "win32"
+      ? `taskkill /PID ${pid} /F`
+      : `kill -9 ${pid}`;
 
     exec(command, (error, _stdout, _stderr) => {
       if (error) return reject(error);
@@ -75,13 +76,13 @@ function killProcess(pid: number): Promise<void> {
 }
 
 // 导出 Cliffy Command
-export const killerCommand = new Command()
-  .name("killer")
+export const killCommand = new Command()
+  .name("kill")
   .description("Kill processes by name or PID")
   .arguments("<targets...:string>")
   .action(async (_options, ...targets: string[]) => {
     if (targets.length === 0) {
-      console.error("用法: killer <processName|pid> [<processName|pid> ...]");
+      console.error("用法: kill <processName|pid> [<processName|pid> ...]");
       Deno.exit(2);
     }
 
@@ -120,5 +121,5 @@ export const killerCommand = new Command()
 
 // 直接运行支持
 if (import.meta.main) {
-  await killerCommand.parse(Deno.args);
+  await killCommand.parse(Deno.args);
 }
